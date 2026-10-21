@@ -173,6 +173,15 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 .bestbox small{font-size:12px;color:#f3c27f}
 .bestbox strong{font:600 24px var(--serif);letter-spacing:-.01em;color:var(--ink)}
 .bestbox span{font-size:13px;color:var(--muted)}
+.phase{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:0 0 12px;font-size:13px;color:var(--muted)}
+.phase i{width:8px;height:8px;border-radius:50%;background:#55d68e;animation:livePulse 2s infinite}
+.phase b{color:var(--ink);font-weight:600;font-size:14px}
+.phase.warn i{background:#e8b853;animation:none}
+.phase.wait i{background:#7fb2e5;animation:none}
+.phase.off i{background:#8fa3bd;animation:none}
+.hero.closed .ph{filter:blur(2px) saturate(.3) brightness(.36)}
+.hero.closed .mist{opacity:.45}
+.hero.closed .gauge-num{fill:#b4c3d8}
 </style>
 </head>
 <body>
@@ -209,13 +218,14 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
         </g>
         <path transform="translate(92 84) scale(1.1)" d="M2 38 L18 14 L26 24 L36 6 L52 38 Z" fill="rgba(220,235,255,.85)" class="gauge-mtn"/>
         <text id="gNum" class="gauge-num" x="130" y="168" text-anchor="middle">--%</text>
-        <text class="gauge-lbl" x="130" y="194" text-anchor="middle">Visibility</text>
+        <text id="gLbl" class="gauge-lbl" x="130" y="194" text-anchor="middle">Visibility</text>
       </svg>
     </div>
 
     <div class="info">
       <h2>Kanchenjunga</h2>
       <p class="alt">8,586 m (28,169 ft)</p>
+      <div class="phase" id="phase"></div>
       <div class="status">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="statusIcon" style="color:#55d68e">
           <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
@@ -459,15 +469,37 @@ function blend(list) {
     d.n = got.length;
     d.score = Math.round(got.reduce((a, b) => a + b, 0) / got.length);
     if (got.length > 1) d.confidence = Math.min(95, d.confidence + (Math.max(...got) - Math.min(...got) <= 20 ? 5 : -5) + (got.length === 3 ? 3 : 0));
+    d.phase = phaseOf(d);
+    d.passed = d.phase === "closed";
     return d;
   });
+}
+
+// viewing window: sunrise - 15 min to sunrise + 135 min. Outside it the page never claims a live sighting.
+const WIN_BEFORE = 15, WIN_AFTER = 135;
+const mm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+function windowOf(d) {
+  const [sh, sm] = (d.sunrise !== "--:--" ? d.sunrise : "06:00").split(":").map(Number), sr = sh * 60 + sm;
+  return { start: tsOf(d.date, mm(sr - WIN_BEFORE)), end: tsOf(d.date, mm(sr + WIN_AFTER)), hmS: mm(sr - WIN_BEFORE), hmE: mm(sr + WIN_AFTER) };
+}
+const phaseOf = d => { const w = windowOf(d), n = Date.now(); return n > w.end ? "closed" : n >= w.start ? "live" : "upcoming"; };
+const dur = ms => { const m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
+
+function phaseInfo(d, c) {
+  const w = windowOf(d), n = Date.now(), ok = c.key === "clear" || c.key === "partly";
+  const today = d.date === nowDhaka().date, span = `${fmt12(w.hmS)}–${fmt12(w.hmE)}`;
+  const day = (DAY_NAMES[days.indexOf(d)] || "this day").toLowerCase();
+  if (d.phase === "closed") return { tone: "off", text: today ? "Time’s up for today" : "Window closed", note: `closed at ${fmt12(w.hmE)}` };
+  if (d.phase === "live") return { tone: ok ? "ok" : "warn", text: ok ? "Sightings possible now" : "Sightings unlikely now", note: `window ${span} · closes in ${dur(w.end - n)}` };
+  if (today) return { tone: ok ? "ok" : "warn", text: ok ? "Sightings possible today" : "Sightings unlikely today", note: `window ${span} · opens in ${dur(w.start - n)}` };
+  return { tone: "wait", text: `Forecast for ${day}`, note: `window ${span} · opens in ${dur(w.start - n)}` };
 }
 
 // best time: 10-minute steps around sunrise; among times within 5 points of the top, pick the one closest to sunrise + 20 min
 function bestTime(d) {
   const [sh, sm] = (d.sunrise !== "--:--" ? d.sunrise : "06:00").split(":").map(Number);
   const sr = sh * 60 + sm, cand = [];
-  for (let m = Math.floor((sr - 15) / 10) * 10; m <= sr + 135; m += 10) {
+  for (let m = Math.floor((sr - WIN_BEFORE) / 10) * 10; m <= sr + WIN_AFTER; m += 10) {
     const hm = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
     if (tsOf(d.date, hm) < Date.now()) continue;
     const s = combined(tsOf(d.date, hm));
@@ -523,21 +555,27 @@ function renderDayTabs() {
 function renderHero(d) {
   const c = condFor(d.score);
   $("gProg").style.strokeDashoffset = (ARC * (1 - d.score / 100)).toFixed(1);
-  $("gProg").style.stroke = c.color;
+  const closed = d.phase === "closed", col = closed ? "#8fa3bd" : c.color, p = phaseInfo(d, c);
+  $("gProg").style.stroke = col;
   countTo($("gNum"), d.score, "%");
   $("hero").style.setProperty("--haze", (1 - d.score / 100).toFixed(2));
 
-  $("statusTitle").textContent = c.status;
-  $("statusTitle").style.color = c.color;
-  $("statusSub").textContent = c.sub;
-  $("statusIcon").style.color = c.color;
+  const next = bestPick ? ` Next chance: ${fmt12(bestPick.d.best.hm)} ${(DAY_NAMES[bestPick.i] || "").toLowerCase()}.` : "";
+  $("hero").classList.toggle("closed", closed);
+  $("gLbl").textContent = closed ? "This morning" : "Visibility";
+  $("phase").className = "phase " + p.tone;
+  $("phase").innerHTML = `<i></i><b>${p.text}</b><span>${p.note}</span>`;
+  $("statusTitle").textContent = closed ? "Window closed" : c.status;
+  $("statusTitle").style.color = col;
+  $("statusSub").textContent = closed ? `This morning scored ${d.score}%.${next}` : c.sub;
+  $("statusIcon").style.color = col;
 
   $("mCloud").textContent = isNum(d.cloud) ? Math.round(d.cloud) + "%" : "n/a";
   $("mHum").textContent = isNum(d.hum) ? Math.round(d.hum) + "%" : "n/a";
   $("mVis").textContent = isNum(d.vis) ? d.vis.toFixed(1) + " km" : "n/a";
   $("mSmog").textContent = (isNum(d.aod) ? d.aod.toFixed(2) : "n/a") + " · " + (isNum(d.pm) ? Math.round(d.pm) : "n/a");
 
-  document.querySelectorAll(".cond").forEach(el => el.classList.toggle("active", el.dataset.key === c.key));
+  document.querySelectorAll(".cond").forEach(el => el.classList.toggle("active", !closed && el.dataset.key === c.key));
 }
 
 function renderLocation(d) {
@@ -642,6 +680,15 @@ async function load() {
   }
 }
 
+function tick() {
+  if (!days.length) return;
+  const key = () => days.map(d => d.phase + (d.best ? d.best.hm : "")).join() + (bestPick ? bestPick.d.date : "");
+  const before = key();
+  days.forEach(d => { d.phase = phaseOf(d); d.passed = d.phase === "closed"; d.best = bestTime(d); });
+  bestPick = pickBest(days);
+  if (key() !== before) render();
+}
+setInterval(tick, 30000);
 setupGauge();
 buildConds();
 load();
