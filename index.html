@@ -148,7 +148,7 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 .chip i{display:block;height:4px;border-radius:4px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
 .chip i::before{content:"";position:absolute;inset:0;width:var(--w);border-radius:4px;background:linear-gradient(90deg,#e0925c,#55d68e);animation:grow 1.2s var(--ease) both}
 .chip.avg{border-color:rgba(224,146,92,.5)}
-.src{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.src{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 @keyframes grow{from{width:0}}
 
 /* dawn timeline */
@@ -165,7 +165,14 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 .tl .best .h{color:#f3c27f;font-weight:600}
 @keyframes barIn{from{transform:scaleY(0);opacity:0}}
 @keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
-@media (max-width:640px){.src{grid-template-columns:1fr}.tl{gap:6px}.tl .t{height:210px}.tl .bar{height:max(6px,calc(var(--s)*1.7px))}.tl .v,.tl .h{font-size:12px}}
+@media (max-width:640px){.src{grid-template-columns:1fr 1fr}.tl{gap:6px}.tl .t{height:210px}.tl .bar{height:max(6px,calc(var(--s)*1.7px))}.tl .v,.tl .h{font-size:12px}}
+.bestbox{all:unset;box-sizing:border-box;display:grid;gap:2px;width:100%;max-width:520px;margin:0 0 14px;padding:10px 14px;border-radius:14px;cursor:pointer;text-align:left;
+  background:linear-gradient(135deg,rgba(224,146,92,.3),rgba(224,146,92,.08));border:1px solid rgba(240,170,110,.55);animation:rise .8s .3s var(--ease) both;transition:transform .3s var(--ease)}
+.bestbox:hover{transform:translateY(-2px)}
+.bestbox:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.bestbox small{font-size:12px;color:#f3c27f}
+.bestbox strong{font:600 24px var(--serif);letter-spacing:-.01em;color:var(--ink)}
+.bestbox span{font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -218,6 +225,7 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
           <span id="statusSub">Fetching live forecast…</span>
         </div>
       </div>
+      <button class="bestbox" id="bestBox" type="button"><small>Best time to visit</small><strong>Calculating…</strong></button>
       <ul class="metrics">
         <li>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.5 3.5 0 0 0 7 18z"/></svg>
@@ -279,7 +287,7 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
   <p class="foot" id="conf"></p>
 </section>
 
-<p class="disclaimer">An estimate averaged from two weather feeds (Open-Meteo and MET Norway), not a confirmed sighting or a calibrated probability. Cloud over the mountain itself can hide the range even when the local sky looks clear. Thresholds are starting values to tune against real mornings.</p>
+<p class="disclaimer">An estimate averaged from three weather feeds (Open-Meteo, MET Norway and wttr.in), not a confirmed sighting or a calibrated probability. Cloud over the mountain itself can hide the range even when the local sky looks clear. Thresholds are starting values to tune against real mornings.</p>
 
 </div>
 
@@ -390,60 +398,87 @@ function buildDays(fc, aq) {
   });
 }
 
-// ---------- second feed: MET Norway (cloud layers + humidity only) ----------
+// ---------- three feeds, one timeline ----------
+// Each feed becomes [{ts, v}] points. Values are interpolated between points, then judged by the same evaluate() rules.
 const TL = ["04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00"];
-const mnIndex = mn => { const m = {}; mn.properties.timeseries.forEach(s => m[s.time.slice(0, 13)] = s.data.instant.details); return m; };
-const utcKey = s => new Date(`${s}:00+06:00`).toISOString().slice(0, 13);
+let sources = [], bestPick = null;
+const tsOf = (date, hm) => Date.parse(`${date}T${hm}:00+06:00`);
+const fmt12 = hm => { const [h, m] = hm.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "am" : "pm"}`; };
 
-function mnHour(d) {
-  if (!d) return null;
-  const e = evaluate({ cl: d.cloud_area_fraction_low, cm: d.cloud_area_fraction_medium, ch: d.cloud_area_fraction_high,
-    hum: d.relative_humidity, vis: null, aod: null, pm: null });
+function ptsA(fc, aq) {
+  const h = fc.hourly, a = aq && aq.hourly ? aq.hourly : { time: [] }, aqIdx = {};
+  (a.time || []).forEach((t, j) => aqIdx[t] = j);
+  return h.time.map((t, i) => { const j = aqIdx[t]; return { ts: tsOf(t.slice(0, 10), t.slice(11, 16)), v: {
+    cl: h.cloud_cover_low[i], cm: h.cloud_cover_mid[i], ch: h.cloud_cover_high[i],
+    vis: isNum(h.visibility[i]) ? h.visibility[i] / 1000 : null, hum: h.relative_humidity_2m[i],
+    aod: j === undefined ? null : a.aerosol_optical_depth[j], pm: j === undefined ? null : a.pm2_5[j] } }; });
+}
+const ptsB = mn => mn.properties.timeseries.map(s => { const d = s.data.instant.details; return { ts: Date.parse(s.time), v: {
+  cl: d.cloud_area_fraction_low, cm: d.cloud_area_fraction_medium, ch: d.cloud_area_fraction_high,
+  hum: d.relative_humidity, vis: null, aod: null, pm: null } }; });
+function ptsC(wt) {
+  const out = [];
+  wt.weather.forEach(w => (w.hourly || []).forEach(h => {
+    const hr = Math.floor(Number(h.time) / 100), c = Number(h.cloudcover);
+    out.push({ ts: tsOf(w.date, String(hr).padStart(2, "0") + ":00"), v: { cl: c, cm: c, ch: c, vis: Number(h.visibility), hum: Number(h.humidity), aod: null, pm: null } });
+  }));
+  return out.sort((a, b) => a.ts - b.ts);
+}
+
+function at(pts, ts) {
+  const i = pts.findIndex(p => p.ts >= ts);
+  if (i < 0) return null;
+  if (pts[i].ts === ts) return pts[i].v;
+  if (i === 0) return null;
+  const a = pts[i - 1], b = pts[i];
+  if (b.ts - a.ts > 7 * 3600e3) return null;
+  const f = (ts - a.ts) / (b.ts - a.ts), v = {};
+  for (const k in a.v) v[k] = isNum(a.v[k]) && isNum(b.v[k]) ? a.v[k] + (b.v[k] - a.v[k]) * f : null;
+  return v;
+}
+// share of the rules a feed can judge that pass, 0-100 (a feed is never punished for data it does not carry)
+function pct(v) {
+  if (!v) return null;
+  const e = evaluate(v);
   let got = 0, avail = 0;
   for (const k in e.r) if (!e.r[k].missing) { avail += PTS[k]; if (e.r[k].pass) got += PTS[k]; }
   return avail ? got / avail * 100 : null;
 }
-
-function mnScore(date, mn) {
-  if (!mn || !mn.properties) return null;
-  const idx = mnIndex(mn);
-  const vals = HOURS.map(hm => mnHour(idx[utcKey(`${date}T${hm}`)])).filter(isNum);
-  return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+function combined(ts) {
+  const p = sources.map(s => pct(at(s.pts, ts))).filter(isNum);
+  return p.length ? p.reduce((a, b) => a + b, 0) / p.length : null;
 }
 
-function buildTimeline(fc, aq, mn) {
-  const h = fc.hourly, a = aq && aq.hourly ? aq.hourly : { time: [] };
-  const aqIdx = {};
-  (a.time || []).forEach((t, j) => aqIdx[t] = j);
-  const idx = mn && mn.properties ? mnIndex(mn) : {};
-  const out = {};
-  h.time.forEach((t, i) => {
-    const [date, hm] = t.split("T");
-    if (!TL.includes(hm)) return;
-    const j = aqIdx[t];
-    const om = evaluate({
-      cl: h.cloud_cover_low[i], cm: h.cloud_cover_mid[i], ch: h.cloud_cover_high[i],
-      vis: isNum(h.visibility[i]) ? h.visibility[i] / 1000 : null, hum: h.relative_humidity_2m[i],
-      aod: j === undefined ? null : a.aerosol_optical_depth[j], pm: j === undefined ? null : a.pm2_5[j]
-    }).score;
-    const b = mnHour(idx[utcKey(t)]);
-    (out[date] = out[date] || []).push({ hm, score: isNum(b) ? Math.round((om + b) / 2) : om });
-  });
-  return out;
-}
-
-// average of both feeds; agreement nudges confidence
-function blend(list, mn) {
+// day score = average of the feeds; agreement nudges confidence
+function blend(list) {
   return list.map(d => {
-    const b = mnScore(d.date, mn);
-    d.om = d.score; d.mn = b;
-    if (b !== null) {
-      d.score = Math.round((d.om + b) / 2);
-      d.confidence = Math.min(95, d.confidence + (Math.abs(d.om - b) <= 20 ? 5 : -5));
-    }
+    d.om = d.score;
+    const own = s => { const v = HOURS.map(hm => pct(at(s.pts, tsOf(d.date, hm)))).filter(isNum); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null; };
+    d.mn = own(sources[1]); d.wt = own(sources[2]);
+    const got = [d.om, d.mn, d.wt].filter(isNum);
+    d.n = got.length;
+    d.score = Math.round(got.reduce((a, b) => a + b, 0) / got.length);
+    if (got.length > 1) d.confidence = Math.min(95, d.confidence + (Math.max(...got) - Math.min(...got) <= 20 ? 5 : -5) + (got.length === 3 ? 3 : 0));
     return d;
   });
 }
+
+// best time: 10-minute steps around sunrise; among times within 5 points of the top, pick the one closest to sunrise + 20 min
+function bestTime(d) {
+  const [sh, sm] = (d.sunrise !== "--:--" ? d.sunrise : "06:00").split(":").map(Number);
+  const sr = sh * 60 + sm, cand = [];
+  for (let m = Math.floor((sr - 15) / 10) * 10; m <= sr + 135; m += 10) {
+    const hm = `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+    if (tsOf(d.date, hm) < Date.now()) continue;
+    const s = combined(tsOf(d.date, hm));
+    if (isNum(s)) cand.push({ m, hm, s });
+  }
+  if (!cand.length) return null;
+  const top = Math.max(...cand.map(c => c.s));
+  const p = cand.filter(c => c.s >= top - 5).sort((a, b) => Math.abs(a.m - sr - 20) - Math.abs(b.m - sr - 20))[0];
+  return { hm: p.hm, score: Math.round(p.s) };
+}
+const pickBest = list => list.map((d, i) => ({ d, i })).filter(x => x.d.best).reduce((b, x) => !b || x.d.best.score > b.d.best.score ? x : b, null);
 
 function buildConds() {
   $("conds").innerHTML = CONDS.map((c, i) =>
@@ -531,19 +566,32 @@ function renderFoot(d) {
 function renderSrc(d) {
   const chip = (n, v, note, cls = "") => `<div class="chip ${cls}"><span>${n}</span><b>${v === null ? "n/a" : v + "%"}</b><i style="--w:${v || 0}%"></i><small>${note}</small></div>`;
   $("src").innerHTML = chip("Open-Meteo", d.om, "cloud · visibility · humidity · smog") +
-    chip("MET Norway", d.mn, d.mn === null ? "unavailable for this day" : "cloud · humidity") +
-    chip("Average", d.score, d.mn === null ? "one feed only" : "mean of both feeds", "avg");
+    chip("MET Norway", d.mn, d.mn === null ? "unavailable" : "cloud · humidity") +
+    chip("wttr.in", d.wt, d.wt === null ? "unavailable" : "cloud · visibility · humidity") +
+    chip("Average", d.score, `mean of ${d.n} feed${d.n > 1 ? "s" : ""}`, "avg");
 }
 
 function renderTimeline(d) {
-  const tl = d.tl || [];
+  const tl = TL.map(hm => ({ hm, s: combined(tsOf(d.date, hm)) })).filter(x => isNum(x.s)).map(x => ({ hm: x.hm, score: Math.round(x.s) }));
   if (!tl.length) { $("tl").innerHTML = ""; $("tlNote").textContent = "Hourly data unavailable for this day."; return; }
-  const best = tl.reduce((b, x) => x.score > b.score ? x : b, tl[0]);
+  const lit = tl.filter(x => x.hm >= d.sunrise);
+  const pool = lit.length ? lit : tl;
+  const best = pool.reduce((b, x) => x.score > b.score ? x : b, pool[0]);
   $("tl").innerHTML = tl.map((x, i) =>
     `<div class="c ${x === best ? "best " : ""}${HOURS.includes(x.hm) ? "win" : ""}" style="--i:${i};--s:${x.score}">
        <div class="t"><span class="v">${x.score}</span><div class="bar"></div></div><span class="h">${x.hm}</span>
      </div>`).join("");
-  $("tlNote").textContent = `Best hour: ${best.hm} (${best.score} points). Lighter bars mark the ${HOURS[0]} to ${HOURS[HOURS.length - 1]} scoring window.`;
+  $("tlNote").textContent = `Best hour: ${best.hm} (${best.score} points). Lighter bars mark the ${HOURS[0]} to ${HOURS[HOURS.length - 1]} scoring window.` +
+    (d.best ? ` Best time that day: ${fmt12(d.best.hm)} (${d.best.score}%).` : d.passed ? " This day’s window has passed." : "");
+}
+
+function renderBest() {
+  const el = $("bestBox");
+  if (!bestPick) { el.innerHTML = `<small>Best time to visit</small><strong>No upcoming window</strong><span>The mornings in range have passed or have no data.</span>`; return; }
+  const { d, i } = bestPick;
+  const dt = new Date(d.date + "T12:00:00+06:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: TZ });
+  el.innerHTML = `<small>Best time to visit</small><strong>${fmt12(d.best.hm)} · ${(DAY_NAMES[i] || "Day " + (i + 1)).toLowerCase()}</strong><span>${dt} · ${d.best.score}% visibility · ${d.n} of 3 feeds</span>`;
+  el.onclick = () => { current = i; render(); };
 }
 
 function render() {
@@ -556,6 +604,7 @@ function render() {
   renderFoot(d);
   renderSrc(d);
   renderTimeline(d);
+  renderBest();
 }
 
 // ---------- load ----------
@@ -567,20 +616,26 @@ async function load() {
       `&daily=sunrise,sunset`;
     const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&timezone=${TZ}&forecast_days=3&hourly=aerosol_optical_depth,pm2_5`;
 
-    const [mn, fc, aq] = await Promise.all([
+    const [wt, mn, fc, aq] = await Promise.all([
+      fetchWithTimeout(`https://wttr.in/${LAT},${LON}?format=j1`, 20000).catch(err => { console.warn("wttr.in unavailable:", err); return null; }),
       fetchWithTimeout(`https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${LAT}&lon=${LON}`).catch(err => { console.warn("MET Norway unavailable:", err); return null; }),
       fetchWithTimeout(fcUrl),
       fetchWithTimeout(aqUrl).catch(err => { console.warn("Air quality unavailable:", err); return null; })
     ]);
 
-    days = blend(buildDays(fc, aq), mn);
-    const tl = buildTimeline(fc, aq, mn);
-    days.forEach(d => d.tl = tl[d.date] || []);
+    sources = [
+      { name: "Open-Meteo", pts: ptsA(fc, aq) },
+      { name: "MET Norway", pts: mn && mn.properties ? ptsB(mn) : [] },
+      { name: "wttr.in", pts: wt && wt.weather ? ptsC(wt) : [] }
+    ];
+    days = blend(buildDays(fc, aq));
+    days.forEach(d => d.best = bestTime(d));
+    bestPick = pickBest(days);
     if (!days.length) throw new Error("no forecast hours returned");
     current = Math.max(0, days.findIndex(d => !d.passed));
     render();
     $("updated").textContent = (aq ? "" : "Smog data unavailable · ") +
-      "Updated " + new Date().toLocaleString("en-GB", { timeZone: TZ }) + " · Open-Meteo" + (mn ? " + MET Norway" : " (MET Norway unavailable)");
+      "Updated " + new Date().toLocaleString("en-GB", { timeZone: TZ }) + " · " + sources.filter(s => s.pts.length).map(s => s.name).join(" + ") + (sources.some(s => !s.pts.length) ? " · " + sources.filter(s => !s.pts.length).map(s => s.name).join(", ") + " unavailable" : "");
   } catch (e) {
     console.error(e);
     $("updated").textContent = "Could not load forecast: " + e.message;
