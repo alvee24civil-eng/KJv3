@@ -22,7 +22,7 @@ body{min-height:100vh;padding-bottom:40px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
 /* header */
-header.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 28px;flex-wrap:wrap}
+header.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 28px;flex-wrap:wrap}
 .brand{display:flex;gap:14px;align-items:center}
 .brand h1{font:600 26px var(--serif);margin:0;letter-spacing:-.01em}
 .brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
@@ -31,7 +31,7 @@ header.top{display:flex;justify-content:space-between;align-items:center;gap:16p
 .dot{width:8px;height:8px;border-radius:50%;background:#55d68e;animation:livePulse 2s infinite}
 
 /* hero: photo + haze overlay (--haze 0 clear … 1 hidden, set from the score) */
-.hero{--haze:0;position:relative;margin:0 18px;border-radius:28px;overflow:hidden;border:1px solid var(--line);min-height:680px;isolation:isolate;padding-bottom:1px}
+.hero{--haze:0;position:relative;margin:0 18px;border-radius:28px;overflow:hidden;border:1px solid var(--line);min-height:520px;isolation:isolate;padding-bottom:1px}
 .ph{position:absolute;inset:-24px;z-index:-3;background:var(--img) center 35%/cover;
   filter:blur(calc(var(--haze)*9px)) saturate(calc(1.12 - var(--haze)*.7)) brightness(calc(1 - var(--haze)*.38));
   transition:filter 1.6s var(--ease);animation:kb 40s ease-in-out infinite alternate;will-change:transform}
@@ -41,35 +41,35 @@ header.top{display:flex;justify-content:space-between;align-items:center;gap:16p
 .mist.b{bottom:52%;animation-duration:27s;animation-direction:alternate-reverse}
 .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(7,13,23,.3),rgba(7,13,23,0) 30%,rgba(7,13,23,.6) 62%,rgba(7,13,23,.96))}
 
-.hero-main{position:relative;display:grid;grid-template-columns:auto 1fr;gap:44px;align-items:center;margin:230px 28px 0;padding:30px 36px;border-radius:24px;
+.hero-main{position:relative;display:grid;grid-template-columns:auto 1fr;gap:32px;align-items:center;width:fit-content;max-width:calc(100% - 56px);margin:120px 0 0 28px;padding:22px 30px;border-radius:28px;
   background:rgba(7,13,23,.46);border:1px solid var(--line);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);animation:rise 1s var(--ease) both}
-.gauge-wrap{width:250px}
+.gauge-wrap{width:190px}
 .gauge-wrap svg{width:100%;overflow:visible;display:block}
 .gauge-mtn{animation:floaty 6s ease-in-out infinite}
 #gProg{transition:stroke-dashoffset 1.4s var(--ease),stroke .6s ease;filter:drop-shadow(0 0 8px rgba(85,214,142,.35))}
 .gauge-num{font:600 46px var(--serif);letter-spacing:-.02em;fill:#fff}
 .gauge-lbl{font:500 14px var(--sans);fill:var(--muted)}
-.info h2{font:600 32px var(--serif);margin:0;letter-spacing:-.01em}
-.info .alt{color:var(--muted);margin:4px 0 20px;font-size:15px}
-.status{display:flex;gap:14px;align-items:flex-start;margin-bottom:22px}
+.info h2{font:600 28px var(--serif);margin:0;letter-spacing:-.01em}
+.info .alt{color:var(--muted);margin:2px 0 12px;font-size:15px}
+.status{display:flex;gap:14px;align-items:flex-start;margin-bottom:14px}
 .status svg{flex:none;margin-top:4px;transition:color .6s}
 #statusTitle{display:block;font-size:22px;font-weight:600;transition:color .6s}
 #statusSub{display:block;color:var(--muted);font-size:14px;margin-top:2px}
-.metrics{list-style:none;margin:0;padding:0;display:grid;gap:13px;max-width:400px}
+.metrics{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 30px;max-width:520px}
 .metrics li{display:grid;grid-template-columns:24px 1fr auto;gap:14px;align-items:center;font-size:15px;animation:rise .6s both}
 .metrics li:nth-child(1){animation-delay:.25s}.metrics li:nth-child(2){animation-delay:.32s}
 .metrics li:nth-child(3){animation-delay:.39s}.metrics li:nth-child(4){animation-delay:.46s}
 .metrics svg,.metrics span{color:var(--muted)}
 .metrics b{font-weight:600}
 
-.dtabs{display:flex;gap:10px;justify-content:center;padding:22px 40px 0;flex-wrap:wrap}
+.dtabs{display:flex;gap:10px;justify-content:center;padding:16px 28px 0;flex-wrap:wrap}
 .dtab{background:rgba(7,13,23,.45);backdrop-filter:blur(10px);border:1px solid var(--line);color:var(--muted);font:500 14px var(--sans);padding:10px 18px;border-radius:14px;cursor:pointer;transition:transform .35s var(--ease),background .35s,border-color .35s}
 .dtab b{display:block;color:var(--ink);font:600 18px var(--sans);margin-top:2px}
 .dtab small{display:block;font-size:11px;opacity:.7;margin-top:2px}
 .dtab:hover{transform:translateY(-2px);border-color:rgba(127,178,229,.45)}
 .dtab.on{background:rgba(127,178,229,.2);border-color:var(--accent);color:var(--ink)}
 
-.locbar{margin:22px 28px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px;border:1px solid var(--line);border-radius:14px;background:rgba(7,13,23,.55);backdrop-filter:blur(10px);font-size:14px}
+.locbar{margin:14px 28px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 20px;border:1px solid var(--line);border-radius:14px;background:rgba(7,13,23,.55);backdrop-filter:blur(10px);font-size:14px}
 .locbar .l,.locbar .r,.locbar .r span{display:flex;gap:10px;align-items:center}
 .locbar .r{gap:22px}
 .locbar svg{flex:none}
@@ -91,7 +91,7 @@ header.top{display:flex;justify-content:space-between;align-items:center;gap:16p
 
 /* rule check */
 .panel{position:relative;margin:18px;border-radius:20px;background:var(--card);border:1px solid var(--line);padding:22px 24px;overflow:hidden;backdrop-filter:blur(10px)}
-.panel::before{content:"";position:absolute;left:0;top:0;height:2px;width:0;background:linear-gradient(90deg,var(--accent),#55d68e);animation:lineGrow 1.1s .2s var(--ease) forwards}
+.panel::before{content:"";position:absolute;left:0;top:0;height:2px;width:0;background:linear-gradient(90deg,#e0925c,#55d68e);animation:lineGrow 1.1s .2s var(--ease) forwards}
 .panel h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 14px}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -123,15 +123,49 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 @keyframes fade{0%,100%{opacity:.45}50%{opacity:1}}
 
 @media (max-width:900px){
-  .hero-main{grid-template-columns:1fr;justify-items:center;text-align:center;margin:150px 14px 0;padding:24px 18px}
+  .hero-main{grid-template-columns:1fr;justify-items:center;text-align:center;margin:100px 14px 0;padding:20px 16px;width:auto;max-width:none}
   .metrics{margin:0 auto;text-align:left}
   .status{justify-content:center}
   .conds{grid-template-columns:1fr 1fr}
   .locbar{margin:22px 14px}
   .dtabs{padding:18px 14px 0}
 }
-@media (max-width:520px){.conds{grid-template-columns:1fr}.brand h1{font-size:21px}}
+@media (max-width:520px){.conds{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.brand h1{font-size:21px}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+/* surfaces: glass over the photo, solid below */
+.hero-main,.dtab,.locbar{background:rgba(10,18,30,.42);border:1px solid rgba(255,255,255,.14);
+  -webkit-backdrop-filter:blur(18px) saturate(1.35);backdrop-filter:blur(18px) saturate(1.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 14px 34px -14px rgba(0,0,0,.55)}
+.dtab:hover{border-color:rgba(255,255,255,.32)}
+.dtab.on{background:rgba(255,255,255,.17);border-color:rgba(255,255,255,.4)}
+.panel,.cond{background:#0b111b;border:1px solid rgba(255,255,255,.07);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.cond.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 24px 50px -24px rgba(127,178,229,.45)}
+.chip{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 16px;display:grid;gap:4px;overflow:hidden}
+.chip span{font-size:12px;color:var(--muted)}
+.chip b{font:600 26px var(--serif)}
+.chip small{font-size:11px;color:var(--muted)}
+.chip i{display:block;height:4px;border-radius:4px;background:rgba(255,255,255,.1);position:relative;overflow:hidden}
+.chip i::before{content:"";position:absolute;inset:0;width:var(--w);border-radius:4px;background:linear-gradient(90deg,#e0925c,#55d68e);animation:grow 1.2s var(--ease) both}
+.chip.avg{border-color:rgba(224,146,92,.5)}
+.src{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+@keyframes grow{from{width:0}}
+
+/* dawn timeline */
+.tl{display:grid;grid-template-columns:repeat(7,1fr);gap:14px}
+.tl .c{display:flex;flex-direction:column;align-items:center;gap:10px}
+.tl .t{height:250px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:8px}
+.tl .v{font-size:15px;opacity:.85}
+.tl .bar{position:relative;width:100%;height:max(6px,calc(var(--s)*2.1px));border-radius:12px;background:rgba(255,255,255,.035);transform-origin:bottom;animation:barIn .9s var(--ease) both;animation-delay:calc(var(--i)*70ms)}
+.tl .win .bar{background:rgba(255,255,255,.085)}
+.tl .best .bar{background:linear-gradient(180deg,#5b3d1a,#e08a58)}
+.tl .best .bar::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 38px rgba(240,150,80,.6);animation:glow 3.2s ease-in-out infinite}
+.tl .best .v{font-weight:700;opacity:1}
+.tl .h{font-size:15px;color:var(--muted)}
+.tl .best .h{color:#f3c27f;font-weight:600}
+@keyframes barIn{from{transform:scaleY(0);opacity:0}}
+@keyframes glow{0%,100%{opacity:.5}50%{opacity:1}}
+@media (max-width:640px){.src{grid-template-columns:1fr}.tl{gap:6px}.tl .t{height:210px}.tl .bar{height:max(6px,calc(var(--s)*1.7px))}.tl .v,.tl .h{font-size:12px}}
 </style>
 </head>
 <body>
@@ -228,7 +262,14 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
 <section class="conds" id="conds"></section>
 
 <section class="panel">
-  <h2>Rule check · 06:00 to 08:00</h2>
+  <h2>Dawn timeline · best hour glows</h2>
+  <div class="tl" id="tl"></div>
+  <p class="foot" id="tlNote"></p>
+</section>
+
+<section class="panel">
+  <div class="src" id="src"></div>
+  <h2>Rule check · Open-Meteo · 06:00 to 08:00</h2>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Rule</th><th>Needed</th><th>06:00</th><th>07:00</th><th>08:00</th></tr></thead>
@@ -238,7 +279,7 @@ td small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
   <p class="foot" id="conf"></p>
 </section>
 
-<p class="disclaimer">An estimate from weather model data, not a confirmed sighting or a calibrated probability. Cloud over the mountain itself can hide the range even when the local sky looks clear. Thresholds are starting values to tune against real mornings.</p>
+<p class="disclaimer">An estimate averaged from two weather feeds (Open-Meteo and MET Norway), not a confirmed sighting or a calibrated probability. Cloud over the mountain itself can hide the range even when the local sky looks clear. Thresholds are starting values to tune against real mornings.</p>
 
 </div>
 
@@ -349,6 +390,61 @@ function buildDays(fc, aq) {
   });
 }
 
+// ---------- second feed: MET Norway (cloud layers + humidity only) ----------
+const TL = ["04:00", "05:00", "06:00", "07:00", "08:00", "09:00", "10:00"];
+const mnIndex = mn => { const m = {}; mn.properties.timeseries.forEach(s => m[s.time.slice(0, 13)] = s.data.instant.details); return m; };
+const utcKey = s => new Date(`${s}:00+06:00`).toISOString().slice(0, 13);
+
+function mnHour(d) {
+  if (!d) return null;
+  const e = evaluate({ cl: d.cloud_area_fraction_low, cm: d.cloud_area_fraction_medium, ch: d.cloud_area_fraction_high,
+    hum: d.relative_humidity, vis: null, aod: null, pm: null });
+  let got = 0, avail = 0;
+  for (const k in e.r) if (!e.r[k].missing) { avail += PTS[k]; if (e.r[k].pass) got += PTS[k]; }
+  return avail ? got / avail * 100 : null;
+}
+
+function mnScore(date, mn) {
+  if (!mn || !mn.properties) return null;
+  const idx = mnIndex(mn);
+  const vals = HOURS.map(hm => mnHour(idx[utcKey(`${date}T${hm}`)])).filter(isNum);
+  return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+}
+
+function buildTimeline(fc, aq, mn) {
+  const h = fc.hourly, a = aq && aq.hourly ? aq.hourly : { time: [] };
+  const aqIdx = {};
+  (a.time || []).forEach((t, j) => aqIdx[t] = j);
+  const idx = mn && mn.properties ? mnIndex(mn) : {};
+  const out = {};
+  h.time.forEach((t, i) => {
+    const [date, hm] = t.split("T");
+    if (!TL.includes(hm)) return;
+    const j = aqIdx[t];
+    const om = evaluate({
+      cl: h.cloud_cover_low[i], cm: h.cloud_cover_mid[i], ch: h.cloud_cover_high[i],
+      vis: isNum(h.visibility[i]) ? h.visibility[i] / 1000 : null, hum: h.relative_humidity_2m[i],
+      aod: j === undefined ? null : a.aerosol_optical_depth[j], pm: j === undefined ? null : a.pm2_5[j]
+    }).score;
+    const b = mnHour(idx[utcKey(t)]);
+    (out[date] = out[date] || []).push({ hm, score: isNum(b) ? Math.round((om + b) / 2) : om });
+  });
+  return out;
+}
+
+// average of both feeds; agreement nudges confidence
+function blend(list, mn) {
+  return list.map(d => {
+    const b = mnScore(d.date, mn);
+    d.om = d.score; d.mn = b;
+    if (b !== null) {
+      d.score = Math.round((d.om + b) / 2);
+      d.confidence = Math.min(95, d.confidence + (Math.abs(d.om - b) <= 20 ? 5 : -5));
+    }
+    return d;
+  });
+}
+
 function buildConds() {
   $("conds").innerHTML = CONDS.map((c, i) =>
     `<div class="cond" data-key="${c.key}" style="animation-delay:${i * 0.1}s">
@@ -432,6 +528,24 @@ function renderFoot(d) {
   $("conf").textContent = `Confidence ${d.confidence}%. ` + parts.join(" ");
 }
 
+function renderSrc(d) {
+  const chip = (n, v, note, cls = "") => `<div class="chip ${cls}"><span>${n}</span><b>${v === null ? "n/a" : v + "%"}</b><i style="--w:${v || 0}%"></i><small>${note}</small></div>`;
+  $("src").innerHTML = chip("Open-Meteo", d.om, "cloud · visibility · humidity · smog") +
+    chip("MET Norway", d.mn, d.mn === null ? "unavailable for this day" : "cloud · humidity") +
+    chip("Average", d.score, d.mn === null ? "one feed only" : "mean of both feeds", "avg");
+}
+
+function renderTimeline(d) {
+  const tl = d.tl || [];
+  if (!tl.length) { $("tl").innerHTML = ""; $("tlNote").textContent = "Hourly data unavailable for this day."; return; }
+  const best = tl.reduce((b, x) => x.score > b.score ? x : b, tl[0]);
+  $("tl").innerHTML = tl.map((x, i) =>
+    `<div class="c ${x === best ? "best " : ""}${HOURS.includes(x.hm) ? "win" : ""}" style="--i:${i};--s:${x.score}">
+       <div class="t"><span class="v">${x.score}</span><div class="bar"></div></div><span class="h">${x.hm}</span>
+     </div>`).join("");
+  $("tlNote").textContent = `Best hour: ${best.hm} (${best.score} points). Lighter bars mark the ${HOURS[0]} to ${HOURS[HOURS.length - 1]} scoring window.`;
+}
+
 function render() {
   if (!days.length) return;
   const d = days[current];
@@ -440,6 +554,8 @@ function render() {
   renderLocation(d);
   renderRules(d);
   renderFoot(d);
+  renderSrc(d);
+  renderTimeline(d);
 }
 
 // ---------- load ----------
@@ -451,17 +567,20 @@ async function load() {
       `&daily=sunrise,sunset`;
     const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&timezone=${TZ}&forecast_days=3&hourly=aerosol_optical_depth,pm2_5`;
 
-    const [fc, aq] = await Promise.all([
+    const [mn, fc, aq] = await Promise.all([
+      fetchWithTimeout(`https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=${LAT}&lon=${LON}`).catch(err => { console.warn("MET Norway unavailable:", err); return null; }),
       fetchWithTimeout(fcUrl),
       fetchWithTimeout(aqUrl).catch(err => { console.warn("Air quality unavailable:", err); return null; })
     ]);
 
-    days = buildDays(fc, aq);
+    days = blend(buildDays(fc, aq), mn);
+    const tl = buildTimeline(fc, aq, mn);
+    days.forEach(d => d.tl = tl[d.date] || []);
     if (!days.length) throw new Error("no forecast hours returned");
     current = Math.max(0, days.findIndex(d => !d.passed));
     render();
     $("updated").textContent = (aq ? "" : "Smog data unavailable · ") +
-      "Updated " + new Date().toLocaleString("en-GB", { timeZone: TZ }) + " · Open-Meteo";
+      "Updated " + new Date().toLocaleString("en-GB", { timeZone: TZ }) + " · Open-Meteo" + (mn ? " + MET Norway" : " (MET Norway unavailable)");
   } catch (e) {
     console.error(e);
     $("updated").textContent = "Could not load forecast: " + e.message;
